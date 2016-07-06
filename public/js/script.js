@@ -3,6 +3,11 @@ document.getElementById("nameInput").value=localStorage.getItem("name") || "";
 chooseBtn.innerHTML=localStorage.getItem("name") ? "Change": "Choose"
 var myNum;
 var mainText;
+
+newRoom.addEventListener("click",function(){
+	window.location.href="/new";
+})
+
 chooseBtn.addEventListener("click",function(){
 	if(document.getElementById("nameInput").value.length>0)
 	{
@@ -17,85 +22,84 @@ chooseBtn.addEventListener("click",function(){
 var image;
 var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update ,render:render});
 
-    var player;
-    var direction;
-    // var speed=0.1;
-    var started;
-    var ellipse;
-	var text2;
-	var interval;
-	var players;
-	var speed;
-	var floors;
-	var ellipseLength;
-	var names;
-	var button;
-	var buttonText;
-	var laps;
-	var lastX;
-	var lastY;
-	var lastAngle;
-	var finishedTexts;
-	var currentPlace;
+var player;
+var direction;
+// var speed=0.1;
+var started;
+var ellipse;
+var text2;
+var interval;
+var players;
+var speed;
+var floors;
+var ellipseLength;
+var names;
+var button;
+var buttonText;
+var laps;
+var lastX;
+var lastY;
+var lastAngle;
+var finishedTexts;
+var currentPlace;
 
-	function renderMainText(value){
-		mainText.setText(value);
-		mainText.visible=true;
-	}
-		function buttonClicked(sprite){
-			console.log("button clicked!")
-			buttonText.visible=false;
-			button.visible=false;
-			players[myNum].ready=true;
-			socket.emit("ready",{});
-		}
-		function spriteClicked(sprite){
+function renderMainText(value){
+	mainText.setText(value);
+	mainText.visible=true;
+}
+function buttonClicked(sprite){
+	console.log("button clicked!")
+	buttonText.visible=false;
+	button.visible=false;
+	players[myNum].ready=true;
+	socket.emit("ready",{});
+}
+function spriteClicked(sprite){
 
-			for(x in players)
-				players[x].events.onInputDown.remove(spriteClicked, this);
-			myNum=sprite.num;
-			socket.emit("spriteChoose",{
-										'myNum': myNum,
-										'name': myName || "guest"+myNum});
+	for(x in players)
+		players[x].events.onInputDown.remove(spriteClicked, this);
+	myNum=sprite.num;
+	socket.emit("spriteChoose",{
+								'myNum': myNum,
+								'name': myName || "guest"+myNum});
 
-			console.log("kliknieto!"+sprite.num)
-			
-		}
-		function renderTexts(num){
-			if(players[num].ready && names[num].text.indexOf("ready")==-1)
-				names[num].text+=" (ready)"
-			names[num].text=laps[num].length>0? names[num].realName+" ("+laps[num]+")" : names[num].text;
-			names[num].x=players[num].x-30
-			names[num].y=players[num].y+15
-		}
+	console.log("kliknieto!"+sprite.num)
+	
+}
+function renderTexts(num){
+	if(players[num].ready && names[num].text.indexOf("ready")==-1)
+		names[num].text+=" (ready)"
+	names[num].text=laps[num].length>0? names[num].realName+" ("+laps[num]+")" : names[num].text;
+	names[num].x=players[num].x-30
+	names[num].y=players[num].y+15
+}
 function showButton(condition){
 	button.visible=condition;
 	buttonText.visible=condition;
 }
 function initButton(){
-  		button = game.add.sprite(100, 200, 'button');
-  		var style = { font: "32px Courier", fill: "#ffffff"};
-  		var style2 = { font: "32px Courier", fill: "#ffffdd"};
-		buttonText = game.add.text(0, 0, "READY", style);
-		button.scale.x=1.4//0.05
-		button.scale.y=1//0.035
-		button.y=80
-		button.x=340
-		buttonText.alignTo(button, Phaser.CENTER, -10,-48);
-		buttonText.inputEnabled = true;
-		buttonText.input.useHandCursor = true;
-		button.inputEnabled = true;
-		button.input.useHandCursor = true;
-		buttonText.events.onInputOver.add(function(){buttonText.setStyle({ font: "32px Courier", fill: "#000000"})},this);
-		buttonText.events.onInputOut.add(function(){buttonText.setStyle({ font: "32px Courier", fill: "#ffffff"})},this);
-		button.events.onInputDown.add(buttonClicked, this);
-		buttonText.events.onInputDown.add(buttonClicked, this);
+	button = game.add.sprite(100, 200, 'button');
+	var style = { font: "32px Courier", fill: "#ffffff"};
+	var style2 = { font: "32px Courier", fill: "#ffffdd"};
+	buttonText = game.add.text(0, 0, "READY", style);
+	button.scale.x=1.4//0.05
+	button.scale.y=1//0.035
+	button.y=80
+	button.x=340
+	buttonText.alignTo(button, Phaser.CENTER, -10,-48);
+	buttonText.inputEnabled = true;
+	buttonText.input.useHandCursor = true;
+	button.inputEnabled = true;
+	button.input.useHandCursor = true;
+	buttonText.events.onInputOver.add(function(){buttonText.setStyle({ font: "32px Courier", fill: "#000000"})},this);
+	buttonText.events.onInputOut.add(function(){buttonText.setStyle({ font: "32px Courier", fill: "#ffffff"})},this);
+	button.events.onInputDown.add(buttonClicked, this);
+	buttonText.events.onInputDown.add(buttonClicked, this);
+	showButton(false);
+}
 
-		showButton(false);
-  	}
 function preload() {
-	   //game.load.image('diamond', 'assets/diamond.png');
-	   game.load.image('button', 'assets/button.png');
+	game.load.image('button', 'assets/button.png');
 }
 
 function create() {
@@ -115,16 +119,11 @@ function create() {
 		renderMainText(myName);
 	//game.physics.startSystem(Phaser.Physics.CANVAS);
 	game.stage.backgroundColor = '#2d2d2d';
-	 //game.add.sprite(0, 0, 'sky');
-
- //    var graphics = game.add.graphics(game.world.centerX, game.world.centerY);
- //    graphics.lineStyle(8, 0xffd900);
-	// graphics.drawEllipse(0, 0, 300, 90);
-	//ellipse = new Phaser.Ellipse(game.world.centerX, game.world.centerY, 300, 550);
-	//ellipse = new Phaser.Ellipse(200, 200, 300, 90)
-    dudeData2=dudeData.map(function(a){return a.split("D").join("A")});
+	
+	dudeData2=dudeData.map(function(a){return a.split("D").join("A")});
     dudeData3=dudeData.map(function(a){return a.split("D").join("3")});
     dudeData4=dudeData.map(function(a){return a.split("D").join("5")});
+    
     game.create.texture('phaserDude0', dudeData, 4, 4, 0);
 	game.create.texture('phaserDude1', dudeData2, 4, 4, 0);
     game.create.texture('phaserDude2', dudeData3, 4, 4, 0);
@@ -138,7 +137,7 @@ function create() {
     	//var tempRect=new Phaser.Rectangle(400-(i*wspolczynnik), 130+i, i*wspolczynnik*2-13, 1);
 		var tempRect=game.add.sprite(400-(i*wspolczynnik), 130+i, 'onePixel');
 		
-			tempRect.scale.x=i*(wspolczynnik/2)
+		tempRect.scale.x=i*(wspolczynnik/2)
 		// tempRect.body.collideWorldBounds = true;
 		// tempRect.body.checkCollision.up = true;
 		// tempRect.body.checkCollision.down = true;
@@ -146,15 +145,11 @@ function create() {
   		floors.push(tempRect) ;
     	game.physics.enable(floors[i], Phaser.Physics.ARCADE);
     }
+
   	ellipse=new Phaser.Ellipse(100, 350, 200, 300)
   	
-
-  	
 	initButton();
-	// ellipse.scale.x=0.65
-	// ellipse.scale.y=0.9
 	
-
 	var numOfPlayers=4;
 	for(var i=0;i<numOfPlayers;i++)
 	{	
@@ -180,17 +175,15 @@ function create() {
 		players[x].events.onInputDown.add(spriteClicked, this);
 		
 
-	tempRect.body.checkCollision.left = false;
-	tempRect.body.checkCollision.right = false;
-	tempRect.body.checkCollision.OVERLAP_BIAS=-50
-	players[x].body.collideWorldBounds = true;
-	players[x].body.bounce.setTo(1, 1);
+		tempRect.body.checkCollision.left = false;
+		tempRect.body.checkCollision.right = false;
+		tempRect.body.checkCollision.OVERLAP_BIAS=-50
+		players[x].body.collideWorldBounds = true;
+		players[x].body.bounce.setTo(1, 1);
 
 	// players[x].body.velocity.y = -200;
 	// players[x].body.velocity.x = 200;
   	}
-
-  	// player2 = game.add.sprite(300, 300, 'phaserDude2');
     
     game.physics.arcade.enable(player);
 	var text = "Żużel game with sockets";
@@ -215,9 +208,9 @@ function collisionRemove(){
 			players[x].speed=2
 		}
 	}
-	
 
 }
+
 setInterval(collisionRemove,100);
 
 function collisionHandler(a,b,c){
@@ -249,7 +242,7 @@ function update() {
 		}
 		for(var i=0;i<ellipseLength;i++)
     	{
-    		//game.physics.arcade.collide(floors[i], players[x], collisionHandler, null, this);
+    		game.physics.arcade.collide(floors[i], players[x], collisionHandler, null, this);
     	}
 	  		  
 		//game.physics.arcade.collide(ellipse, players[x], collisionHandler, null, this);  
@@ -257,23 +250,12 @@ function update() {
 	
 	    if (cursors.left.isDown)
 	    {
-	    players[x].angle -= 0.015*players[x].speed;
-	        
-	       
-	//player.scale.x+=0.003
-	        // direction+=0.1;
-	        // player.scale.x-=0.001
+		    players[x].angle -= 0.015*players[x].speed;
 	        //player.scale.x = 0.25;
 	    }
 	    else if (cursors.right.isDown)
 	    {
 	    	players[x].angle += 0.015*players[x].speed;
-	    	// direction-=0.1;
-	        // newY=player.y-speed;
-	        // newX=player.x-speed;
-
-	         //player.scale.x+=0.001
-	        //player.scale.x = -0.25;
 	    }
 	    
 
@@ -281,30 +263,30 @@ function update() {
 	    	players[x].angle=players[x].angle+2*Math.PI
 	    	// newX=player.x+speed*direction;
 	     //    newY=player.y+speed*(1-direction);
-	     	if(players[x].angle<-Math.PI)
-	     		players[x].scale.x=0.25+((players[x].angle+Math.PI)/(Math.PI)*0.5)//*dir;
-	     	if(players[x].angle>-Math.PI)//poczatek
-	     		players[x].scale.x=-0.25-(players[x].angle/3.14)*0.5//*dir;
-			if(player.scale.x>0.25)
-	     		players[x].scale.x
-	     	else if(players[x].scale.x<-0.25)
-	     		players[x].scale.x=-0.25
-	 		players[x].x = players[x].x + players[x].speed*Math.cos(players[x].angle);
-	        players[x].y = players[x].y + players[x].speed*Math.sin(players[x].angle);
-	        lastX=players[x].x;
-	        lastY=players[x].y;
-	        lastAngle=players[x].angle;
+     	if(players[x].angle<-Math.PI)
+     		players[x].scale.x=0.25+((players[x].angle+Math.PI)/(Math.PI)*0.5)//*dir;
+     	if(players[x].angle>-Math.PI)//poczatek
+     		players[x].scale.x=-0.25-(players[x].angle/3.14)*0.5//*dir;
+		if(player.scale.x>0.25)
+     		players[x].scale.x
+     	else if(players[x].scale.x<-0.25)
+     		players[x].scale.x=-0.25
+ 		players[x].x = players[x].x + players[x].speed*Math.cos(players[x].angle);
+        players[x].y = players[x].y + players[x].speed*Math.sin(players[x].angle);
+        lastX=players[x].x;
+        lastY=players[x].y;
+        lastAngle=players[x].angle;
 		socket.emit("position",{
-							'num': 	 x,
-							'x': 	 players[x].x,
-							'y': 	 players[x].y,
-							'scaleX':players[x].scale.x,
-							'scaleY':players[x].scale.y,
-							'angle': players[x].angle
-							})
+						'num': 	 x,
+						'x': 	 players[x].x,
+						'y': 	 players[x].y,
+						'scaleX':players[x].scale.x,
+						'scaleY':players[x].scale.y,
+						'angle': players[x].angle
+						})
+        if(players[x].y>195 && players[x].y<215  && players[x].x>250 && players[x].x<500)
+        	players[x].speed=0;
 		renderTexts(x)
-	   		// console.log(angle)
-	   		// console.log(player.scale.x)
 	  	
 	}
 }
