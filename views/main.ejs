@@ -1,14 +1,12 @@
 <!--
-//TODO: imiona wychwytywac
-//TODO: Zeby zniknal motor ktorym nikt nie gra
-//TODO: zeby zapisywac w zmiennych socketa cookie i pobierac z niego w pierwszej kolejnosci
-//TODO: resetowanie stanu serwera po grze(mapaSocketow i stan playerow) (ewentualne setInterval na tym)
 //TODO: zrobienie, aby przy get "/" przekierowywalo do najnowszego dostepnego pokoju
-//TODO: zabezpeiczenie, aby nikt nie zmienil swojej pozycji o zbyt duzo(zliczanie czy dana odleglosc od ostatniego x w perspektywie czasu nie jest zbyt duza)
 //TODO: PODZIELENIE NA MODULY - zarowno serw jak i klient
-//TODO: if laps==3 to olewaj rządania
-//TODO: jak 2 osoby klikna ready to daj 20 sec innym na klikniecie
+//TODO: if laps==3 to olewaj żądania
 //TODO: jak ktoś skonczy to daj 30 sec innym na zakonczenie
+//TODO: dla smartfonow 2 przyciski 
+//todo: wyslac w stanie tez kto jakie mijesce zajal 
+//FIXME: po odswiezeniu pojawia sie ready button jak ktos gra
+//FIXME: chyba juz nie:undefined nazwą mojgo motora czasami
 //UNDEFINED
 //
 
@@ -28,11 +26,25 @@
     </style>
 </head>
 <body>
-
+<label>Your name: </label>
+<input id="nameInput" type="text"> </input>
+<button id="chooseBtn"> Choose </button>
 <script type="text/javascript">
+var myName=localStorage.getItem("name") || null;
+nameInput.value=localStorage.getItem("name") || "";
+chooseBtn.innerHTML=localStorage.getItem("name") ? "Change": "Choose"
 var socket;
 var myNum;
-
+var mainText;
+chooseBtn.addEventListener("click",function(){
+	if(nameInput.value.length>0)
+	{
+		myName=nameInput.value;
+		localStorage.setItem("name",myName)
+		chooseBtn.innerHTML="Change";
+		renderMainText(myName);
+	}
+})
 function startSocketing(){
 	socket=io.connect("localhost:3000/<%=namespace%>");
 	socket.emit("wiad1",{a:"1abc1"})
@@ -43,10 +55,16 @@ function startSocketing(){
 	socket.on("spriteBad",spriteBad)
 	socket.on("startGame",startGame)
 	socket.on("playerReady",playerReady)
-	 
+	socket.on("finished",finished)
+	socket.on("restart",restart);
 }
 
+function restart(){
+	game.destroy();
+	game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update ,render:render});
+}
 
+// nsp.emit("finished",{"who":motorIndex, "time":time})
 var image;
 var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update ,render:render});
 
@@ -62,7 +80,7 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create
 '.............................DDD1555555555555555555................51111111s.............................',
 '...........................DDD.....D5D5D5D5D5D5D5DD5D1111......D111111155555555555555s...................',
 '......5555555555555......DDD......DDDDDDDDDDDDDDDDDDD1111111111111155555555555555555555555...............',
-'......5555555555555555DDDD........DDDDDDDDDDDDDDDDDDDDD1111111111d55555555555555555555555555.............',
+'......5555555555];555555DDDD........DDDDDDDDDDDDDDDDDDDDD1111111111d55555555555555555555555555.............',
 '........d1111111dD5DDDDD..........DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD5D555555511111111111155555555...........',
 '......111111111111DDDDsD5DD.......D.DDDDDDDDDDDDDDDDDDDDDDDDDDDD55555555111111111111111155555555.........',
 '....111111.......DDDD1d55555D.....D.DDDDDDDDDDDDDDDDDDDDDDDDDDDDDD55551111111s.....111111155555555.......',
@@ -92,6 +110,21 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create
 	var button;
 	var buttonText;
 	var laps;
+	var lastX;
+	var lastY;
+	var lastAngle;
+	var finishedTexts;
+	var currentPlace;
+	function finished(a){
+		var time = new Date(a.time); 
+		var name=names[a.who].realName;
+		currentPlace++;
+		finishedTexts+= currentPlace+ ". "+name+ " "+time.getMinutes() + ":" +time.getSeconds()+"\n";
+		renderMainText(finishedTexts)
+		if(currentPlace==1)
+			setInterval()
+	}
+
 	function roomState(a){
 		console.log("a:")
 		console.log(a)
@@ -100,42 +133,68 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create
 // 'y': 200}
 		// if((!a.players || !a.started) && a[1])
 		// 	a=a[1]
-		for(var x in a.players){
-			var b=a.players;
-			// if(typeof(names[x]) !== "undefined")
-			names[x].setText(b[x].name);
-			// else
-			// {
-			// 	preparedNames[x]=b[x].name
-			// }
-			players[x].x=b[x].x;
-			players[x].y=b[x].y;
-			players[x].ready=b[x].ready;
-			renderTexts(x)
-			if(a.started)
-			{
+		if(!a.started)
+		{
+			for(var x in a.players){
+				var b=a.players;
+				// if(typeof(names[x]) !== "undefined")
+				names[x].setText(b[x].name);
+				names[x].realName=b[x].name;
+				// else
+				// {
+				// 	preparedNames[x]=b[x].name
+				// }
+				players[x].x=b[x].x;
+				players[x].y=b[x].y;
+				players[x].ready=b[x].ready;
+				renderTexts(x)
+				if(a.started)
+				{
 
+				}
+				else if(a.owner!=x)
+				{
+					players[x].alpha=0.5;
+					players[x].events.onInputDown.remove(spriteClicked, this);
+				}
 			}
-			else if(a.owner!=x)
+			if(typeof(a.owner) !== "undefined")
 			{
-				players[x].alpha=0.5;
-				players[x].events.onInputDown.remove(spriteClicked, this);
+				myNum=a.owner;
+				spriteOK(true)
+				for(var i in players)
+					players[i].events.onInputDown.remove(spriteClicked, this);
+				if(Object.keys(a.players).length>=2)
+					showButton(true);
 			}
 		}
-		if(a.owner)
+		else
 		{
-			myNum=a.owner;
-			spriteOK(true)
-			for(var i in players)
-				players[i].events.onInputDown.remove(spriteClicked, this);
-			if(Object.keys(a.players).length>=2)
-				showButton(true);
+			if(typeof(a.owner) !== "undefined")
+			{
+				myNum=a.owner;
+				// players[myNum].x=localStorage["x"];
+				// players[myNum].y=localStorage["y"];
+				players[myNum].x=a.players[myNum].x
+				players[myNum].y=a.players[myNum].y
+				players[myNum].angle=a.players[myNum].angle
+				players[myNum].scale.x=a.players[myNum].scaleX
+				players[myNum].scale.y=a.players[myNum].scaleY
+				started=true;
+				// players[myNum].angle=localStorage["angle"];
+			}
+			
+			for(var x in a.players){
+				var b=a.players;
+				// if(typeof(names[x]) !== "undefined")
+				names[x].setText(b[x].name);
+				names[x].realName=b[x].name;
+				players[x].playing=b[x].playing;
+			}
 		}
 	}
 
 	function startGame(a){
-		var who = a.who
-		players[who].ready=true;
 		for(var x in players)
 		{
 			if(players[x].ready)
@@ -143,13 +202,19 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create
 				players[x].ready=false
 				players[x].playing=true
 				players[x].alpha=1;
-				names[x].text=names[x].text.substr(0,names[x].text.indexOf('(')-1)
+				names[x].text=names[x].realName;
+			}
+			else
+			{
+				names[x].text="";
 			}
 			if(x!=myNum)
+			{
 				players[x].visible=false;
+				names[x].visible=false;
+			}	
 			
 		}	
-
 		buttonText.text=5;
 		buttonText.visible=true;
 		setTimeout(function(){buttonText.visible=true;buttonText.text=4;},1000)
@@ -164,31 +229,56 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create
 					if(players[x].playing)
 					{
 						players[x].visible=true;
+						names[x].visible=true;
 					}
 						
 				}
 		},5000)
 		
 	}
+	function renderMainText(value){
+		mainText.setText(value);
+		mainText.visible=true;
+	}
 	function playerReady(a){
 		var who = a.who;
 		players[who].ready=true;
 		renderTexts(who)
+		if(a.startedInterval)
+		{
+			var time=20;
+			var waitingInterval=setInterval(function(){
+				time--;
+				renderMainText("waiting "+time+" sec\nfor remaining players");
+				
+				if(time==0)
+				{
+					clearInterval(waitingInterval);
+					renderMainText("")
+				}	
+				
+			},1000)
+			renderMainText("waiting "+time+" sec\nfor remaining players");
+
+		}
 	}
 	function positionSet(a){
-		var i=a.num;
-		if (i!=myNum)
+		if(started)
 		{
-			players[i].x=a.x;
-			players[i].y=a.y;
-			players[i].scale.x=a.scaleX
-			players[i].scale.y=a.scaleY
-			
+			var i=a.num;
+			if (i!=myNum)
+			{
+				players[i].x=a.x;
+				players[i].y=a.y;
+				players[i].scale.x=a.scaleX
+				players[i].scale.y=a.scaleY
+				
+			}
+			if(i==myNum && a.lap==3)
+				started=false;
+			laps[i]=a.lap+"";
+			renderTexts(i);
 		}
-		if(i==myNum && a.lap==3)
-			started=false;
-		laps[i]=a.lap+"";
-		renderTexts(i);
 	}	
 	function spriteChoose(a){
 		var i=a.myNum;
@@ -218,6 +308,8 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create
 	function spriteOK(a){
 			if(a)
 			{
+				if(!myName)
+		  			renderMainText("guest"+myNum);
 				interval=setInterval(function(){
 				if(players[myNum].y!=285){
 					players[myNum].y++;
@@ -253,8 +345,8 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create
 			myNum=sprite.num;
 			socket.emit("spriteChoose",{
 										'myNum': myNum,
-										'name': "imie"+myNum});
-		  // ... your code
+										'name': myName || "guest"+myNum});
+
 			console.log("kliknieto!"+sprite.num)
 			
 		}
@@ -296,6 +388,7 @@ function preload() {
 }
 
 function create() {
+	currentPlace=0;
 	myNum=-1;
 	started=false;
 	laps=["","","",""]
@@ -305,6 +398,10 @@ function create() {
 	floors=[];
 	ellipseLength;
 	names=[];
+	finishedTexts="";
+	mainText=game.add.text(game.world.centerX+200, 0, "init", { font: "20px Arial", fill: "#aaDD00", align: "center" });
+	if(myName)
+		renderMainText(myName);
 	//game.physics.startSystem(Phaser.Physics.CANVAS);
 	game.stage.backgroundColor = '#2d2d2d';
 	 //game.add.sprite(0, 0, 'sky');
@@ -431,10 +528,17 @@ function update() {
 	//var speed=2.5;
 	if(started)
 	{
+
 		x=myNum;
+		if(isNaN(players[myNum].x) || isNaN(players[myNum].y) || isNaN(players[myNum].angle))
+		{
+			players[myNum].x=lastX;
+			players[myNum].y=lastY;
+			players[myNum].angle=lastAngle;
+		}
 		for(var i=0;i<ellipseLength;i++)
     	{
-    		game.physics.arcade.collide(floors[i], players[x], collisionHandler, null, this);
+    		//game.physics.arcade.collide(floors[i], players[x], collisionHandler, null, this);
     	}
 	  		  
 		//game.physics.arcade.collide(ellipse, players[x], collisionHandler, null, this);  
@@ -460,6 +564,8 @@ function update() {
 	         //player.scale.x+=0.001
 	        //player.scale.x = -0.25;
 	    }
+	    
+
 	    if(-players[x].angle>2*Math.PI)
 	    	players[x].angle=players[x].angle+2*Math.PI
 	    	// newX=player.x+speed*direction;
@@ -474,12 +580,16 @@ function update() {
 	     		players[x].scale.x=-0.25
 	 		players[x].x = players[x].x + players[x].speed*Math.cos(players[x].angle);
 	        players[x].y = players[x].y + players[x].speed*Math.sin(players[x].angle);
+	        lastX=players[x].x;
+	        lastY=players[x].y;
+	        lastAngle=players[x].angle;
 		socket.emit("position",{
 							'num': 	 x,
 							'x': 	 players[x].x,
 							'y': 	 players[x].y,
 							'scaleX':players[x].scale.x,
-							'scaleY':players[x].scale.y
+							'scaleY':players[x].scale.y,
+							'angle': players[x].angle
 							})
 		renderTexts(x)
 	   		// console.log(angle)
