@@ -1,6 +1,5 @@
-//TODO: dla smartfonow 2 przyciski
-//todo: wyslac w stanie tez kto jakie mijesce zajal
 
+//TODO: dla smartfonow 2 przyciski
 
 var myName = localStorage.getItem("name") || null;
 document.getElementById("nameInput").value = localStorage.getItem("name") || "";
@@ -52,6 +51,7 @@ var finishedTexts;
 var currentPlace;
 var rightArrow;
 var leftArrow;
+var infoText;
 
 function renderMainText(value) {
     mainText.setText(value);
@@ -121,13 +121,13 @@ function preload() {
 
 }
 function hideArrows(){
-    mainText.visible=false
+    infoText.visible=false
     rightArrow.visible=false
     leftArrow.visible=false
 }
 function renderArrows(){
 
-    mainText = game.add.text(290, 330, "there will be 5 laps \nuse only these buttons:", {
+    infoText = game.add.text(290, 330, "there will be 5 laps \nuse only these buttons:", {
         font: "20px Arial",
         fill: "#ffffff",
         align: "center"
