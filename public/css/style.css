@@ -1,0 +1,28 @@
+canvas,#rightDiv{
+    display:inline-block;
+
+}
+canvas{
+    float:left;
+}
+#chatDiv{
+    overflow:scroll;
+    height:500px;
+    width:400px;
+}
+#input{
+    line-height:40px;
+    height:40px;
+    width:400px;
+}
+.blue{
+    color: #4900ff;
+}
+.hide{
+    display:none;
+}
+.show{
+    display:block;
+    color:red;
+    font-weight:bold;
+}

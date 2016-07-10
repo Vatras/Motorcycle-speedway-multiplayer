@@ -1,26 +1,18 @@
-<!--
-//TODO: zrobienie, aby przy get "/" przekierowywalo do najnowszego dostepnego pokoju
-//TODO: PODZIELENIE NA MODULY - zarowno serw jak i klient
-//TODO: if laps==3 to olewaj żądania
-//TODO: zablokowanie przejscia przez srodek
-//TODO: jak ktoś skonczy to daj 30 sec innym na zakonczenie
-//TODO: dla smartfonow 2 przyciski 
-//todo: wyslac w stanie tez kto jakie mijesce zajal 
-//FIXME: po odswiezeniu pojawia sie ready button jak ktos gra
-//FIXME: chyba juz nie:undefined nazwą mojgo motora czasami
-
--->
-<!doctype html> 
+<!doctype html>
 	<html lang="en"> 
 	<head> 
 		<meta charset="UTF-8" />
 		<title>Phaser - Making your first game, part 1</title>
+		<link rel="stylesheet" href="css/style.css"/>
 	</head>
 	<body>
-		<label>Your name: </label>
-		<input id="nameInput" type="text"> </input>
-		<button id="chooseBtn"> Choose </button>
-		<button id="newRoom"> New Room </button>
+	<p id="errorMsg" class="hide">Cannot connect to socket server!</p>
+		<div id="container">
+			<label>Your name: </label>
+			<input id="nameInput" type="text"> </input>
+			<button id="chooseBtn"> Choose </button>
+			<button id="newRoom"> New Room </button>
+		</div>
 		<script type="text/javascript" src="js/socket.io-1.4.5.js"></script>
 		<script type="text/javascript" src="js/phaser.min.js"></script>
 		<script type="text/javascript" src="js/motorTexture.js"></script>

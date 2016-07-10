@@ -1,6 +1,7 @@
 var express = require('express');
 var socketIO = require('socket.io')
 var cookieParser = require('cookie-parser')
+var properties = require('./properties.js')
 var app = express();
 var server = require('http').Server(app);
 var io = socketIO(server);
@@ -8,6 +9,8 @@ var io = socketIO(server);
 var currentRoom=getUUID();
 
 var currentPlayersInRoom=0;
+
+
 app.set('view engine','ejs');
 app.set('views',__dirname + '/views');
 app.set('view options',{layout: false});
@@ -22,6 +25,7 @@ app.use(function (req, res, next) {
     // no: set a new cookie
     var randomString=getUUID();
     res.cookie('cookieName',randomString, { maxAge: 900000, httpOnly: true });
+    res.cookie('newRoomDate',"", { maxAge: 900000, httpOnly: true });
     console.log('cookie created successfully');
   } 
   else
@@ -33,21 +37,44 @@ app.use(function (req, res, next) {
 });
 
 
+
 app.get("/",function(req,res,next){
-    console.log("/")
-    currentPlayersInRoom++;
-    if(currentPlayersInRoom==4)
-    {
-        var tempRoomName=currentRoom;
-        currentRoom=getUUID();
-        currentPlayersInRoom=0;
-        res.redirect(tempRoomName);
-    }
-    res.redirect(currentRoom)
-    res.render("main");
+
+        //res.cookie('newRoomDate',new Date().getTime(), { maxAge: 900000, httpOnly: true });
+        console.log("/")
+        // currentPlayersInRoom++;
+        // if(currentPlayersInRoom==4)
+        // {
+        //     var tempRoomName=currentRoom;
+        //     currentRoom=getUUID();
+        //     currentPlayersInRoom=0;
+        //     res.redirect(tempRoomName);
+        // }
+        res.redirect(currentRoom);
 
 })
+app.get("/new/:id",function(req,res,next){
 
+    var param=req.params.id;
+    console.log("/new"+param)
+
+    if(param==currentRoom)
+    {
+        var cookie = req.cookies.newRoomDate;
+        if(cookie && new Date().getTime()-cookie<30000) //30sec
+        {
+            res.redirect("../"+req.params.id+"#tooFast");
+        }
+        res.cookie('newRoomDate',new Date().getTime(), { maxAge: 900000, httpOnly: true });
+
+        currentPlayersInRoom=0;
+        currentRoom=getUUID();
+        res.redirect("../"+currentRoom);
+    }
+    else
+        res.redirect("../"+currentRoom);
+
+})
 app.get("/:id",function(req,res,next){
     var param=req.params.id;
     //console.log(param)
@@ -91,7 +118,7 @@ function makeNameSpace(namespace){
     var namespaceTimeout=null;
     
     nsp.on('connection',function(socket){
-
+        nsp.emit('playerJoined',{});
         function setPlayerAttr(motorNum,attrName,value){
             socketMap[namespace].players[motorNum][attrName]=value;
         }
@@ -154,7 +181,10 @@ function makeNameSpace(namespace){
         }
         sendState();
         //socket.once("roomState",sendState)
+        socket.on("chatMessage",function(temp){
+            nsp.emit('chatMessage',temp);
 
+        });
         socket.on("position",function(temp){
         var sessionId = parseCookie(socket);
             if(sessionId)
@@ -190,7 +220,7 @@ function makeNameSpace(namespace){
                         setPlayerAttr(motorIndex,"wasUp",true);
                         var newLap=getPlayerAttr(motorIndex,"lap") + 1;
                         setPlayerAttr(motorIndex,"lap",newLap);
-                        if(newLap==3 && getPlayerAttr(motorIndex,"finished") == false)
+                        if(newLap==properties.laps && getPlayerAttr(motorIndex,"finished") == false)
                         {
                             setPlayerAttr(motorIndex,"finished",true);
                             var time=new Date().getTime() - socketMap[namespace].startedTime;
