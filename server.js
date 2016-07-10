@@ -10,7 +10,7 @@ var currentRoom=getUUID();
 
 var currentPlayersInRoom=0;
 
-
+var port = process.env.PORT || 8080;
 app.set('view engine','ejs');
 app.set('views',__dirname + '/views');
 app.set('view options',{layout: false});
@@ -307,6 +307,6 @@ function makeNameSpace(namespace){
 
 }
 
-server.listen(3000, function () {
-  console.log('Example app listening on port 3000!');
+server.listen(port, function () {
+  console.log('Example app listening on port!'+port);
 });

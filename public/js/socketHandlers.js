@@ -1,7 +1,7 @@
 var socket;
 
 function startSocketing() {
-    socket = io.connect("192.168.0.208:3000" + window.location.pathname, {
+    socket = io.connect("zuzel.herokuapp.com" + window.location.pathname, {
         transports: ['websocket'],
         'force new connection': true,
         'connect timeout': 500,
