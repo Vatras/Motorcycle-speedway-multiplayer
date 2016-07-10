@@ -148,7 +148,7 @@ function create() {
     ellipseLength;
     names = [];
     finishedTexts = "";
-    mainText = game.add.text(game.world.centerX + 200, 0, "init", {
+    mainText = game.add.text(game.world.centerX + 200, 0, "", {
         font: "20px Arial",
         fill: "#aaDD00",
         align: "center"

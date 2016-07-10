@@ -62,7 +62,9 @@ function finished(a) {
     var time = new Date(a.time);
     var name = names[a.who].realName;
     currentPlace++;
-    finishedTexts += currentPlace + ". " + name + " time-> " + time.getMinutes() + ":" + time.getSeconds() + "\n";
+    var seconds=(time.getSeconds()+"".length==1)? "0"+time.getSeconds() : time.getSeconds()+""
+    var minutes=(time.getMinutes()+"".length==1)? "0"+time.getMinutes() : time.getMinutes()+""
+    finishedTexts += currentPlace + ". " + name + " time-> " + minutes + ":" + seconds + "\n";
     renderMainText(finishedTexts)
 }
 
