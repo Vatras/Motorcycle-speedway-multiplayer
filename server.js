@@ -8,8 +8,6 @@ var io = socketIO(server);
 
 var currentRoom=getUUID();
 
-var currentPlayersInRoom=0;
-
 var port = process.env.PORT || 8080;
 app.set('view engine','ejs');
 app.set('views',__dirname + '/views');
@@ -22,18 +20,11 @@ app.use(function (req, res, next) {
   var cookie = req.cookies.cookieName;
   if (cookie === undefined)
   {
-    // no: set a new cookie
     var randomString=getUUID();
-    res.cookie('cookieName',randomString, { maxAge: 900000, httpOnly: true });
+    res.cookie('cookieName',randomString, { maxAge: 900000, httpOnly: true }); //set cookie
     res.cookie('newRoomDate',"", { maxAge: 900000, httpOnly: true });
-    console.log('cookie created successfully');
   } 
-  else
-  {
-    // yes, cookie was already present 
-    console.log('cookie exists', cookie);
-  } 
-  next(); // <-- important!
+  next();
 });
 
 
@@ -41,7 +32,6 @@ app.use(function (req, res, next) {
 app.get("/",function(req,res,next){
 
         //res.cookie('newRoomDate',new Date().getTime(), { maxAge: 900000, httpOnly: true });
-        console.log("/")
         // currentPlayersInRoom++;
         // if(currentPlayersInRoom==4)
         // {
@@ -56,12 +46,11 @@ app.get("/",function(req,res,next){
 app.get("/new/:id",function(req,res,next){
 
     var param=req.params.id;
-    console.log("/new"+param)
 
     if(param==currentRoom)
     {
         var cookie = req.cookies.newRoomDate;
-        if(cookie && new Date().getTime()-cookie<30000) //30sec
+        if(cookie && new Date().getTime()-cookie<30000) //30sec freeze for not creating too many rooms
         {
             res.redirect("../"+req.params.id+"#tooFast");
         }
@@ -77,13 +66,10 @@ app.get("/new/:id",function(req,res,next){
 })
 app.get("/:id",function(req,res,next){
     var param=req.params.id;
-    //console.log(param)
+    
     if(param=="favicon.ico")
-    next();
-    //console.log('Cookies: ', req.cookies)
-      console.log("/param")
+    	next();
     var param2=req.query.num;
-    //console.log(param2+" <<")
 
     if(typeof io.nsps["/"+req.params.id]==="undefined")
         makeNameSpace(req.params.id);
@@ -94,9 +80,7 @@ app.get("/:id",function(req,res,next){
 
 
 app.use(express.static('public'));
-// app.listen(3000, function () {
-//   console.log('Example app listening on port 3000!');
-// });
+
 function getUUID() {
   function s4() {
     return Math.floor((1 + Math.random()) * 0x10000)
@@ -111,30 +95,35 @@ function makeNameSpace(namespace){
     var namespace=namespace;
     var socketMap={};
     socketMap[namespace]={'started':false,
-                        'readyPlayers':0,
-                        'players':{},
-                        'cookies':{}}
+                          'readyPlayers':0,
+                          'players':{},
+                          'cookies':{}}
     var nsp = io.of('/'+namespace);
     var namespaceTimeout=null;
     
     nsp.on('connection',function(socket){
         nsp.emit('playerJoined',{});
+
+        sendState();
         function setPlayerAttr(motorNum,attrName,value){
             socketMap[namespace].players[motorNum][attrName]=value;
         }
+
         function getPlayerAttr(motorNum,attrName){
             return socketMap[namespace].players[motorNum][attrName];
         }
+
         function parseCookie(){
             if(typeof(socket.sessionId)!=="undefined")
                 return socket.sessionId;
-            var idd=socket.request.headers.cookie;
-            var charNumber=typeof(idd)==="undefined" ? undefined : idd.indexOf("cookieName=");
-            var sessionId=typeof(charNumber)==="undefined" ? null : idd.substr(charNumber+11,idd.length)
+            var tempId=socket.request.headers.cookie;
+            var charNumber=typeof(tempId)==="undefined" ? undefined : tempId.indexOf("cookieName=");
+            var sessionId=typeof(charNumber)==="undefined" ? null : tempId.substr(charNumber+11,tempId.length)
             if(sessionId)
                 socket.sessionId=sessionId;
             return sessionId ? sessionId : false; 
         }
+
         function startGame(){
             socketMap[namespace].started=true;
             socketMap[namespace].startedTime=new Date().getTime();
@@ -149,8 +138,6 @@ function makeNameSpace(namespace){
                     socketMap[namespace].players[x].wasUp=false;
                     socketMap[namespace].players[x].wasDown=true;
                     socketMap[namespace].players[x].lap=0;
-
-                    
                 }
             }
             socketMap[namespace].initPlayingPlayers=socketMap[namespace].playingPlayers;
@@ -159,12 +146,12 @@ function makeNameSpace(namespace){
 
         function restartGame(){
             socketMap[namespace]={'started':false,
-                            'readyPlayers':0,
-                            'players':{},
-                            'cookies':{}}
+	                            'readyPlayers':0,
+	                            'players':{},
+	                            'cookies':{}}
             nsp.emit('restart',{})
-            console.log("game restarted!")
         }
+
         function sendState(){
             var stateMap={};
             stateMap.started=socketMap[namespace].started;
@@ -172,27 +159,23 @@ function makeNameSpace(namespace){
             sessionId=parseCookie(socket);
             if(sessionId && typeof socketMap[namespace].cookies[sessionId]!== "undefined")
             {
-                console.log("cookie: "+sessionId)
-                console.log("cala mapa: "+socketMap[namespace])
-                console.log("mapa od cookiego: "+socketMap[namespace].cookies[sessionId])
                 stateMap.owner=socketMap[namespace].cookies[sessionId]
             }  
             socket.emit('roomState',stateMap)
         }
-        sendState();
+
         //socket.once("roomState",sendState)
         socket.on("chatMessage",function(temp){
             nsp.emit('chatMessage',temp);
-
         });
+
         socket.on("position",function(temp){
-        var sessionId = parseCookie(socket);
+        	var sessionId = parseCookie(socket);
             if(sessionId)
             {
-                var motorIndex = socketMap[namespace].cookies[sessionId];
+                var motorIndex =, socketMap[namespace].cookies[sessionId];
                 if(typeof motorIndex !== "undefined" && socketMap[namespace].players[motorIndex].playing)
                 {
-                    console.log("otrzymalem od "+motorIndex+" y="+temp.y)
 
                     if(temp.y>195 && temp.y<215  && temp.x>250 && temp.x<500)
                     {
@@ -227,7 +210,6 @@ function makeNameSpace(namespace){
                             nsp.emit("finished",{"who":motorIndex,
                                                 "time":time})
                             socketMap[namespace].playingPlayers--;
-                            console.log("socketMap[namespace].playingPlayers "+socketMap[namespace].playingPlayers)
                             
                             if(socketMap[namespace].initPlayingPlayers-1==socketMap[namespace].playingPlayers)
                             {
@@ -245,12 +227,10 @@ function makeNameSpace(namespace){
                             }
                         }   
                     }
-                        console.log(" namespace/"+namespace)
                         temp.lap=getPlayerAttr(motorIndex,"lap");
                         nsp.emit('position', temp);
                 }
             }
-            //socket.emit('hi', 'everyone!');
         })
         socket.on("ready",function(temp){
             var sessionId = parseCookie(socket);
@@ -287,14 +267,12 @@ function makeNameSpace(namespace){
             if(sessionId && typeof socketMap[namespace].cookies[sessionId]==='undefined' && typeof socketMap[namespace].players[motorIndex]==='undefined')
             {
                 socketMap[namespace].players[motorIndex]={'name': temp.name,
-                                                'x':170+motorIndex*150,
-                                                'y': 200,
-                                                'ready':false,
-                                                'playing':false}
+		                                                  'x':170+motorIndex*150,
+		                                                  'y': 200,
+		                                                  'ready':false,
+		                                                  'playing':false}
                 socketMap[namespace].cookies[sessionId]=motorIndex;
-                console.log("dodano do mapy:"+sessionId)
                   
-
                 nsp.emit('spriteChoose', temp);
             }
             else
@@ -302,11 +280,10 @@ function makeNameSpace(namespace){
                 socket.emit('spriteBad',{})
             }
         })
-        console.log("polaczenie")
     });
 
 }
 
 server.listen(port, function () {
-  console.log('Example app listening on port!'+port);
+  console.log('App listening on port!'+port);
 });

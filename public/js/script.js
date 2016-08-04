@@ -1,6 +1,9 @@
 
 //TODO: dla smartfonow 2 przyciski
-
+if(window.location.hash=="#tooFast")
+{
+	document.getElementById("tooFastMsg").setAttribute("class","show");
+}
 var myName = localStorage.getItem("name") || null;
 document.getElementById("nameInput").value = localStorage.getItem("name") || "";
 chooseBtn.innerHTML = localStorage.getItem("name") ? "Change" : "Choose"
@@ -127,7 +130,7 @@ function hideArrows(){
 }
 function renderArrows(){
 
-    infoText = game.add.text(290, 330, "there will be 5 laps \nuse only these buttons:", {
+    infoText = game.add.text(290, 330, "click on a motor to choose one \nthere will be 5 laps \nuse only these buttons:", {
         font: "20px Arial",
         fill: "#ffffff",
         align: "center"
@@ -242,6 +245,7 @@ function create() {
     //game.add.existing(text2);
     cursors = game.input.keyboard.createCursorKeys();
     startSocketing();
+    startChat();
 }
 function collisionRemove() {
     for (x in players) {
@@ -316,13 +320,13 @@ function update() {
         lastX = players[x].x;
         lastY = players[x].y;
         lastAngle = players[x].angle;
-        socket.emit("position", {
-            'num': x,
-            'x': players[x].x,
-            'y': players[x].y,
-            'scaleX': players[x].scale.x,
-            'scaleY': players[x].scale.y,
-            'angle': players[x].angle
+        socket.emit('position', {
+                    'num': x,
+                    'x': players[x].x,
+                    'y': players[x].y,
+                    'scaleX': players[x].scale.x,
+                    'scaleY': players[x].scale.y,
+                    'angle': players[x].angle
         })
         if (players[x].y > 195 && players[x].y < 215 && players[x].x > 250 && players[x].x < 500)
             players[x].speed = 0;
@@ -331,7 +335,7 @@ function update() {
     }
 }
 var guestName="guest_"+(new Date().getTime()+"").substr(6);
-setTimeout(function () {
+function startChat() {
     var cont = document.createElement("div");
     cont.setAttribute("id", "rightDiv");
     var div = document.createElement("div");
@@ -359,5 +363,4 @@ setTimeout(function () {
             return false;
         }
     }
-
-}, 500)
+}
